@@ -157,12 +157,13 @@
                     💫 点击按钮生成专属疯狂星期四文案
                   </p>
                 </div>
-                <div class="text-center">
+                <div class="text-center mt-6">
                   <button
                     id="copyBtn"
-                    class="bg-gradient-to-r from-kfcYellow via-yellow-400 to-yellow-500 hover:from-yellow-400 hover:via-yellow-500 hover:to-yellow-600 text-kfcRed px-8 py-3 rounded-full font-bold transition-all duration-300 opacity-0 pointer-events-none shadow-lg hover:shadow-xl transform hover:scale-105 text-lg"
+                    class="inline-flex items-center justify-center bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white px-6 py-3 rounded-xl font-semibold transition-all duration-300 opacity-0 pointer-events-none shadow-lg hover:shadow-xl transform hover:scale-105 text-base min-w-[140px] border-0 outline-none focus:ring-2 focus:ring-emerald-300 focus:ring-opacity-50"
                   >
-                    <i class="fa fa-copy mr-2"></i>复制文案
+                    <i class="fa fa-copy mr-2 text-sm"></i>
+                    <span>复制文案</span>
                   </button>
                 </div>
               </div>
@@ -463,12 +464,77 @@
       });
 
       copyBtn.addEventListener("click", function () {
-        navigator.clipboard.writeText(currentText).then(() => {
-          copyBtn.innerHTML = '<i class="fa fa-check mr-2"></i>已复制！';
-          setTimeout(() => {
-            copyBtn.innerHTML = '<i class="fa fa-copy mr-2"></i>复制文案';
-          }, 2000);
-        });
+        if (!currentText) {
+          alert('请先生成文案！');
+          return;
+        }
+        
+        // 复制到剪贴板的通用函数
+        function copyTextToClipboard(text) {
+          // 优先使用现代 Clipboard API
+          if (navigator.clipboard && window.isSecureContext) {
+            return navigator.clipboard.writeText(text);
+          } else {
+            // 降级到传统方法
+            const textArea = document.createElement("textarea");
+            textArea.value = text;
+            textArea.style.position = "absolute";
+            textArea.style.left = "-999999px";
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+            
+            return new Promise((resolve, reject) => {
+              try {
+                const successful = document.execCommand('copy');
+                document.body.removeChild(textArea);
+                if (successful) {
+                  resolve();
+                } else {
+                  reject(new Error('复制失败'));
+                }
+              } catch (err) {
+                document.body.removeChild(textArea);
+                reject(err);
+              }
+            });
+          }
+        }
+        
+        // 更新按钮样式为复制中状态
+        copyBtn.innerHTML = '<i class="fa fa-spinner fa-spin mr-2 text-sm"></i><span>复制中...</span>';
+        copyBtn.disabled = true;
+        
+        // 执行复制
+        copyTextToClipboard(currentText)
+          .then(() => {
+            copyBtn.innerHTML = '<i class="fa fa-check mr-2 text-sm"></i><span>已复制！</span>';
+            copyBtn.classList.add('bg-gradient-to-r', 'from-green-500', 'to-green-600');
+            copyBtn.classList.remove('from-emerald-500', 'to-emerald-600');
+            
+            setTimeout(() => {
+              copyBtn.innerHTML = '<i class="fa fa-copy mr-2 text-sm"></i><span>复制文案</span>';
+              copyBtn.classList.remove('from-green-500', 'to-green-600');
+              copyBtn.classList.add('from-emerald-500', 'to-emerald-600');
+              copyBtn.disabled = false;
+            }, 2000);
+          })
+          .catch((err) => {
+            console.error('复制失败:', err);
+            copyBtn.innerHTML = '<i class="fa fa-exclamation-triangle mr-2 text-sm"></i><span>复制失败</span>';
+            copyBtn.classList.add('bg-gradient-to-r', 'from-red-500', 'to-red-600');
+            copyBtn.classList.remove('from-emerald-500', 'to-emerald-600');
+            
+            setTimeout(() => {
+              copyBtn.innerHTML = '<i class="fa fa-copy mr-2 text-sm"></i><span>复制文案</span>';
+              copyBtn.classList.remove('from-red-500', 'to-red-600');
+              copyBtn.classList.add('from-emerald-500', 'to-emerald-600');
+              copyBtn.disabled = false;
+            }, 2000);
+            
+            // 显示友好的错误提示
+            alert('复制失败，请手动选择文本进行复制');
+          });
       });
 
       // 表情包点击事件现在由bindEmojiClickEvents函数处理
